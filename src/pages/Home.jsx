@@ -10,7 +10,19 @@ import "../App.css";
 import { getAllRooms } from "../services/roomService";
 import { createBooking } from "../services/bookingService";
 import { useAuth } from "../context/AuthContext";
+const roomTypeImages = {
+  Single:
+    "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800",
 
+  Double:
+    "https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=800",
+
+  Deluxe:
+    "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800",
+
+  Suite:
+    "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800"
+};
 function App() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -42,6 +54,7 @@ function App() {
             name: room.roomType || "Hotel Room",
             image:
               room.image ||
+              roomTypeImages[room.roomType] ||
               "https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=800"
           }));
 
@@ -168,204 +181,207 @@ function App() {
   }
 
   return (
-    <div className="website">
+    <>
 
-      {/* Navbar */}
-      <nav className="navbar">
-        <h2><Hotel /> StayEase</h2>
+      <div className="website">
 
-        <div className="nav-links">
-          <a href="#home">Home</a>
-          <a href="#rooms">Rooms</a>
-          <a href="#services">Services</a>
-        </div>
+        {/* Navbar */}
+        <nav className="navbar">
+          <h2><Hotel /> StayEase</h2>
 
-        {user ? (
-          <Link to="/my-account" className="login-btn">
-            My Account
-          </Link>
-        ) : (
-          <Link to="/login" className="login-btn">
-            Login
-          </Link>
-        )}
-      </nav>
-
-      {/* Hero Section */}
-      <section className="hero" id="home">
-        <div className="hero-content">
-          <p className="tagline">WELCOME TO STAYEASE</p>
-
-          <h1>Find Your Perfect Stay</h1>
-
-          <p>
-            Discover comfortable rooms and enjoy
-            a wonderful hotel experience.
-          </p>
-
-          <div className="search-box">
-            <div>
-              <CalendarDays />
-              <input
-                type="date"
-                value={checkIn}
-                min={new Date().toISOString().split("T")[0]}
-                onChange={e => setCheckIn(e.target.value)}
-                aria-label="Check-in date"
-              />
-            </div>
-
-            <div>
-              <CalendarDays />
-              <input
-                type="date"
-                value={checkOut}
-                min={checkIn || new Date().toISOString().split("T")[0]}
-                onChange={e => setCheckOut(e.target.value)}
-                aria-label="Check-out date"
-              />
-            </div>
-
-            <div>
-              <Users />
-              <select
-                value={guests}
-                onChange={e => setGuests(e.target.value)}
-                aria-label="Guests"
-              >
-                <option value="1">1 Guest</option>
-                <option value="2">2 Guests</option>
-                <option value="3">3 Guests</option>
-                <option value="4">4 Guests</option>
-              </select>
-            </div>
-
-            <button onClick={searchRooms}>
-              <Search /> Search
-            </button>
+          <div className="nav-links">
+            <a href="#home">Home</a>
+            <a href="#rooms">Rooms</a>
+            <a href="#services">Services</a>
           </div>
-        </div>
-      </section>
 
-      {/* Rooms Section */}
-      <section className="rooms-section" id="rooms">
-        <div className="section-heading">
-          <p>OUR ACCOMMODATION</p>
-          <h2>Explore Our Rooms</h2>
-
-          {searched && (
-            <p className="results-message">
-              {filteredRooms.length} rooms match your guest requirement.
-            </p>
-          )}
-        </div>
-
-        <div className="room-container">
-
-          {loadingRooms ? (
-            <p>Loading rooms...</p>
-          ) : filteredRooms.length > 0 ? (
-
-            filteredRooms.map(room => (
-              <div className="room-card" key={room._id}>
-
-                <img src={room.image} alt={room.name} />
-
-                <div className="room-details">
-
-                  <div className="room-title">
-                    <h3>
-                      {room.name} - Room {room.roomNumber}
-                    </h3>
-
-                    {room.rating && (
-                      <span>
-                        <Star size={16} /> {room.rating}
-                      </span>
-                    )}
-                  </div>
-
-                  <p>
-                    {room.description || "Enjoy a comfortable hotel stay."}
-                  </p>
-
-                  <div className="facilities">
-                    <span><Wifi size={16} /> WiFi</span>
-                    <span><Coffee size={16} /> Breakfast</span>
-                    <span><Car size={16} /> Parking</span>
-                  </div>
-
-                  <div className="room-footer">
-                    <h3>
-                      ₹{room.pricePerNight}
-                      <small> / night</small>
-                    </h3>
-
-                    <button onClick={() => openBooking(room)}>
-                      Book Now <ArrowRight size={16} />
-                    </button>
-                  </div>
-
-                </div>
-              </div>
-            ))
-
+          {user ? (
+            <Link to="/my-account" className="login-btn">
+              My Account
+            </Link>
           ) : (
-            <p>No rooms match your guest requirement.</p>
+            <Link to="/login" className="login-btn">
+              Login
+            </Link>
           )}
+        </nav>
 
-        </div>
-      </section>
+        {/* Hero Section */}
+        <section className="hero" id="home">
+          <div className="hero-content">
+            <p className="tagline">WELCOME TO STAYEASE</p>
 
-      {/* Footer */}
-      <footer id="services">
-        <h2>StayEase</h2>
-        <p>Your comfort, our priority.</p>
-        <p>© 2026 StayEase. All rights reserved.</p>
-      </footer>
+            <h1>Find Your Perfect Stay</h1>
 
-      {/* Booking Modal */}
-      {showBooking && selectedRoom && (
-        <div className="booking-overlay">
+            <p>
+              Discover comfortable rooms and enjoy
+              a wonderful hotel experience.
+            </p>
 
-          <div className="booking-modal">
+            <div className="search-box">
+              <div>
+                <CalendarDays />
+                <input
+                  type="date"
+                  value={checkIn}
+                  min={new Date().toISOString().split("T")[0]}
+                  onChange={e => setCheckIn(e.target.value)}
+                  aria-label="Check-in date"
+                />
+              </div>
 
-            <button
-              className="close-btn"
-              onClick={() => {
-                setShowBooking(false);
-                setSelectedRoom(null);
-              }}
-              disabled={bookingLoading}
-            >
-              ✕
-            </button>
+              <div>
+                <CalendarDays />
+                <input
+                  type="date"
+                  value={checkOut}
+                  min={checkIn || new Date().toISOString().split("T")[0]}
+                  onChange={e => setCheckOut(e.target.value)}
+                  aria-label="Check-out date"
+                />
+              </div>
 
-            <h2>Book Your Room</h2>
+              <div>
+                <Users />
+                <select
+                  value={guests}
+                  onChange={e => setGuests(e.target.value)}
+                  aria-label="Guests"
+                >
+                  <option value="1">1 Guest</option>
+                  <option value="2">2 Guests</option>
+                  <option value="3">3 Guests</option>
+                  <option value="4">4 Guests</option>
+                </select>
+              </div>
 
-            <h3>
-              {selectedRoom.name} - Room {selectedRoom.roomNumber}
-            </h3>
+              <button onClick={searchRooms}>
+                <Search /> Search
+              </button>
+            </div>
+          </div>
+        </section>
 
-            <p>₹{selectedRoom.pricePerNight} / night</p>
+        {/* Rooms Section */}
+        <section className="rooms-section" id="rooms">
+          <div className="section-heading">
+            <p>OUR ACCOMMODATION</p>
+            <h2>Explore Our Rooms</h2>
 
-            <p>Check-in: {checkIn}</p>
-            <p>Check-out: {checkOut}</p>
-            <p>Guests: {guests}</p>
-            <p>Maximum capacity: {selectedRoom.capacity} guests</p>
+            {searched && (
+              <p className="results-message">
+                {filteredRooms.length} rooms match your guest requirement.
+              </p>
+            )}
+          </div>
 
-            <button
-              onClick={confirmBooking}
-              disabled={bookingLoading}
-            >
-              {bookingLoading ? "Booking..." : "Confirm Booking"}
-            </button>
+          <div className="room-container">
+
+            {loadingRooms ? (
+              <p>Loading rooms...</p>
+            ) : filteredRooms.length > 0 ? (
+
+              filteredRooms.map(room => (
+                <div className="room-card" key={room._id}>
+
+                  <img src={room.image} alt={room.name} />
+
+                  <div className="room-details">
+
+                    <div className="room-title">
+                      <h3>
+                        {room.name} - Room {room.roomNumber}
+                      </h3>
+
+                      {room.rating && (
+                        <span>
+                          <Star size={16} /> {room.rating}
+                        </span>
+                      )}
+                    </div>
+
+                    <p>
+                      {room.description || "Enjoy a comfortable hotel stay."}
+                    </p>
+
+                    <div className="facilities">
+                      <span><Wifi size={16} /> WiFi</span>
+                      <span><Coffee size={16} /> Breakfast</span>
+                      <span><Car size={16} /> Parking</span>
+                    </div>
+
+                    <div className="room-footer">
+                      <h3>
+                        ₹{room.pricePerNight}
+                        <small> / night</small>
+                      </h3>
+
+                      <button onClick={() => openBooking(room)}>
+                        Book Now <ArrowRight size={16} />
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+              ))
+
+            ) : (
+              <p>No rooms match your guest requirement.</p>
+            )}
 
           </div>
-        </div>
-      )}
+        </section>
 
-    </div>
+        {/* Footer */}
+        <footer id="services">
+          <h2>StayEase</h2>
+          <p>Your comfort, our priority.</p>
+          <p>© 2026 StayEase. All rights reserved.</p>
+        </footer>
+
+        {/* Booking Modal */}
+        {showBooking && selectedRoom && (
+          <div className="booking-overlay">
+
+            <div className="booking-modal">
+
+              <button
+                className="close-btn"
+                onClick={() => {
+                  setShowBooking(false);
+                  setSelectedRoom(null);
+                }}
+                disabled={bookingLoading}
+              >
+                ✕
+              </button>
+
+              <h2>Book Your Room</h2>
+
+              <h3>
+                {selectedRoom.name} - Room {selectedRoom.roomNumber}
+              </h3>
+
+              <p>₹{selectedRoom.pricePerNight} / night</p>
+
+              <p>Check-in: {checkIn}</p>
+              <p>Check-out: {checkOut}</p>
+              <p>Guests: {guests}</p>
+              <p>Maximum capacity: {selectedRoom.capacity} guests</p>
+
+              <button
+                onClick={confirmBooking}
+                disabled={bookingLoading}
+              >
+                {bookingLoading ? "Booking..." : "Confirm Booking"}
+              </button>
+
+            </div>
+          </div>
+        )}
+
+      </div>
+    </>
   );
 }
 
