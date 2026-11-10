@@ -1,4 +1,3 @@
-
 const express = require("express");
 const router = express.Router();
 
@@ -33,9 +32,8 @@ router.get("/", authMiddleware, async (req, res) => {
             totalUsers,
             totalStaff,
             totalRooms,
-            availableRooms,
-            bookedRooms,
             maintenanceRooms,
+            bookedRoomIds,
             totalBookings,
             confirmedBookings,
             cancelledBookings,
@@ -50,11 +48,14 @@ router.get("/", authMiddleware, async (req, res) => {
 
             Room.countDocuments(),
 
-            Room.countDocuments({ status: "available" }),
-
-            Room.countDocuments({ status: "booked" }),
-
             Room.countDocuments({ status: "maintenance" }),
+
+            // Unique rooms with confirmed bookings overlapping today
+            Booking.distinct("room", {
+                status: "confirmed",
+                checkIn: { $lt: tomorrow },
+                checkOut: { $gt: today }
+            }),
 
             Booking.countDocuments(),
 
@@ -92,6 +93,15 @@ router.get("/", authMiddleware, async (req, res) => {
                 .limit(5)
                 .lean()
         ]);
+
+        // Calculate unique booked rooms
+        const bookedRooms = bookedRoomIds.length;
+
+        // Available rooms exclude booked and maintenance rooms
+        const availableRooms = Math.max(
+            totalRooms - bookedRooms - maintenanceRooms,
+            0
+        );
 
         const totalRevenue = revenueResult.length > 0
             ? revenueResult[0].totalRevenue

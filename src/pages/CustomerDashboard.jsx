@@ -1,12 +1,14 @@
-
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 import {
+    createBooking,
     getMyBookings,
     cancelBooking
 } from "../services/bookingService";
+
+import { getAllRooms } from "../services/roomService";
 
 import {
     createRequest,
@@ -34,7 +36,9 @@ import {
     CheckCircle,
     BedDouble,
     ClipboardList,
-    AlertCircle
+    AlertCircle,
+    CalendarCheck,
+    BookOpen
 } from "lucide-react";
 
 import "./CustomerDashboard.css";
@@ -58,6 +62,21 @@ const CustomerDashboard = () => {
     const [cancellingId, setCancellingId] = useState(null);
     const [cancellingRequestId, setCancellingRequestId] = useState(null);
 
+    // Room booking states
+    const [rooms, setRooms] = useState([]);
+    const [roomLoading, setRoomLoading] = useState(false);
+
+    const [bookingDates, setBookingDates] = useState({
+        checkIn: "",
+        checkOut: ""
+    });
+
+    const [guests, setGuests] = useState(1);
+    const [bookingRoomId, setBookingRoomId] = useState(null);
+
+    const [bookingMessage, setBookingMessage] = useState("");
+    const [bookingMessageType, setBookingMessageType] = useState("");
+
     // Service request form
     const [requestForm, setRequestForm] = useState({
         roomNumber: "",
@@ -68,6 +87,16 @@ const CustomerDashboard = () => {
     const [submittingRequest, setSubmittingRequest] = useState(false);
     const [requestMessage, setRequestMessage] = useState("");
     const [requestMessageType, setRequestMessageType] = useState("");
+
+    // Today's date in local timezone
+    const getToday = () => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, "0");
+        const day = String(today.getDate()).padStart(2, "0");
+
+        return `${year}-${month}-${day}`;
+    };
 
     // Fetch dashboard data
     const fetchDashboardData = async () => {
@@ -85,16 +114,21 @@ const CustomerDashboard = () => {
 
             if (bookingResult.status === "fulfilled") {
                 const data = bookingResult.value;
-                setBookings(Array.isArray(data) ? data : data.bookings || []);
+                setBookings(
+                    Array.isArray(data) ? data : data.bookings || []
+                );
             }
 
             if (requestResult.status === "fulfilled") {
                 const data = requestResult.value;
-                setRequests(Array.isArray(data) ? data : data.requests || []);
+                setRequests(
+                    Array.isArray(data) ? data : data.requests || []
+                );
             }
 
             if (notificationResult.status === "fulfilled") {
                 const data = notificationResult.value;
+
                 setNotifications(
                     Array.isArray(data) ? data : data.notifications || []
                 );
@@ -103,6 +137,7 @@ const CustomerDashboard = () => {
             if (results.every(result => result.status === "rejected")) {
                 setError("Unable to load dashboard data. Please try again.");
             }
+
         } catch (err) {
             setError("Something went wrong while loading your dashboard.");
         } finally {
@@ -110,14 +145,137 @@ const CustomerDashboard = () => {
         }
     };
 
+    // Fetch available rooms
+   const fetchAvailableRooms = async () => {
+    try {
+        setRoomLoading(true);
+
+        // If both dates are empty, show all available rooms
+        if (!bookingDates.checkIn && !bookingDates.checkOut) {
+            const data = await getAllRooms();
+            setRooms(data.rooms || []);
+            return;
+        }
+
+        // If only one date is selected, wait for the other date
+        if (!bookingDates.checkIn || !bookingDates.checkOut) {
+            setRooms([]);
+            return;
+        }
+
+        // Fetch rooms according to selected dates
+        const data = await getAllRooms(
+            bookingDates.checkIn,
+            bookingDates.checkOut
+        );
+
+        setRooms(data.rooms || []);
+
+    } catch (err) {
+        setRooms([]);
+
+        setBookingMessage(
+            err.response?.data?.message ||
+            "Unable to load available rooms."
+        );
+
+        setBookingMessageType("error");
+
+    } finally {
+        setRoomLoading(false);
+    }
+};
+    // Initial dashboard loading
     useEffect(() => {
         fetchDashboardData();
     }, []);
+
+    // Refresh available rooms when dates change
+    useEffect(() => {
+        fetchAvailableRooms();
+    }, [bookingDates.checkIn, bookingDates.checkOut]);
 
     // Logout
     const handleLogout = () => {
         logout();
         navigate("/login");
+    };
+
+    // Create room booking
+    const handleBookRoom = async (room) => {
+        setBookingMessage("");
+        setBookingMessageType("");
+
+        if (!bookingDates.checkIn || !bookingDates.checkOut) {
+            setBookingMessage(
+                "Please select both check-in and check-out dates."
+            );
+            setBookingMessageType("error");
+            return;
+        }
+
+        if (bookingDates.checkIn < getToday()) {
+            setBookingMessage("Check-in date cannot be in the past.");
+            setBookingMessageType("error");
+            return;
+        }
+
+        if (bookingDates.checkOut <= bookingDates.checkIn) {
+            setBookingMessage("Check-out must be after check-in.");
+            setBookingMessageType("error");
+            return;
+        }
+
+        if (!Number.isInteger(Number(guests)) || Number(guests) < 1) {
+            setBookingMessage("Please enter a valid guest count.");
+            setBookingMessageType("error");
+            return;
+        }
+
+        if (Number(guests) > room.capacity) {
+            setBookingMessage(
+                `This room allows a maximum of ${room.capacity} guests.`
+            );
+            setBookingMessageType("error");
+            return;
+        }
+
+        try {
+            setBookingRoomId(room._id);
+
+            const response = await createBooking({
+                roomId: room._id,
+                checkIn: bookingDates.checkIn,
+                checkOut: bookingDates.checkOut,
+                guests: Number(guests)
+            });
+
+            setBookingMessage(
+                response.message || "Room booked successfully!"
+            );
+
+            setBookingMessageType("success");
+
+            // Refresh bookings and available rooms
+            await Promise.all([
+                fetchDashboardData(),
+                fetchAvailableRooms()
+            ]);
+
+        } catch (err) {
+            setBookingMessage(
+                err.response?.data?.message ||
+                "Unable to book this room."
+            );
+
+            setBookingMessageType("error");
+
+            // Refresh availability in case another customer booked it
+            await fetchAvailableRooms();
+
+        } finally {
+            setBookingRoomId(null);
+        }
     };
 
     // Cancel booking
@@ -140,6 +298,10 @@ const CustomerDashboard = () => {
             );
 
             alert(response.message || "Booking cancelled successfully!");
+
+            // Cancelled room may become available again
+            await fetchAvailableRooms();
+
         } catch (err) {
             alert(
                 err.response?.data?.message ||
@@ -170,6 +332,7 @@ const CustomerDashboard = () => {
             );
 
             alert(response.message || "Request cancelled successfully!");
+
         } catch (err) {
             alert(
                 err.response?.data?.message ||
@@ -224,34 +387,40 @@ const CustomerDashboard = () => {
                 err.response?.data?.message ||
                 "Failed to submit service request."
             );
+
             setRequestMessageType("error");
+
         } finally {
             setSubmittingRequest(false);
         }
     };
-    const handleMarkAsRead = async (notificationId) => {
-    try {
-        await markNotificationRead(notificationId);
 
-        setNotifications(previous =>
-            previous.map(notification =>
-                notification._id === notificationId
-                    ? { ...notification, isRead: true }
-                    : notification
-            )
-        );
-    } catch (error) {
-        alert(
-            error.response?.data?.message ||
-            "Unable to mark notification as read."
-        );
-    }
-};
+    // Mark notification as read
+    const handleMarkAsRead = async (notificationId) => {
+        try {
+            await markNotificationRead(notificationId);
+
+            setNotifications(previous =>
+                previous.map(notification =>
+                    notification._id === notificationId
+                        ? { ...notification, isRead: true }
+                        : notification
+                )
+            );
+
+        } catch (err) {
+            alert(
+                err.response?.data?.message ||
+                "Unable to mark notification as read."
+            );
+        }
+    };
 
     // Filter bookings
     const filteredBookings = useMemo(() => {
         return bookings.filter(booking => {
             const status = booking.status?.toLowerCase() || "";
+
             const roomNumber =
                 booking.room?.roomNumber || booking.roomNumber || "";
 
@@ -421,6 +590,153 @@ const CustomerDashboard = () => {
                         </div>
                     </div>
 
+                </section>
+
+                {/* BOOK A ROOM */}
+
+                <section className="customer-section">
+                    <div className="section-title">
+                        <div className="section-title-icon">
+                            <BookOpen />
+                        </div>
+
+                        <div>
+                            <h2>Book a Room</h2>
+                            <p>Choose your dates and find an available room.</p>
+                        </div>
+                    </div>
+
+                    <div className="room-booking-filters">
+                        <div className="form-group">
+                            <label>Check-in Date</label>
+
+                            <input
+                                type="date"
+                                min={getToday()}
+                                value={bookingDates.checkIn}
+                                onChange={e => {
+                                    setBookingDates(previous => ({
+                                        ...previous,
+                                        checkIn: e.target.value
+                                    }));
+
+                                    setBookingMessage("");
+                                }}
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Check-out Date</label>
+
+                            <input
+                                type="date"
+                                min={bookingDates.checkIn || getToday()}
+                                value={bookingDates.checkOut}
+                                onChange={e => {
+                                    setBookingDates(previous => ({
+                                        ...previous,
+                                        checkOut: e.target.value
+                                    }));
+
+                                    setBookingMessage("");
+                                }}
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Number of Guests</label>
+
+                            <input
+                                type="number"
+                                min="1"
+                                max="20"
+                                value={guests}
+                                onChange={e => setGuests(e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    {bookingMessage && (
+                        <div className={`booking-message ${bookingMessageType}`}>
+                            {bookingMessageType === "success"
+                                ? <CheckCircle size={18} />
+                                : <AlertCircle size={18} />
+                            }
+
+                            <span>{bookingMessage}</span>
+                        </div>
+                    )}
+
+                    <div className="available-rooms-heading">
+    <h3>Available Rooms</h3>
+</div>
+
+                    {roomLoading ? (
+                        <div className="customer-empty">
+                            <RefreshCw className="loading-icon" size={30} />
+                            <h3>Finding available rooms...</h3>
+                        </div>
+                    ) : rooms.length === 0 ? (
+                        <div className="customer-empty">
+                            <BedDouble size={35} />
+                            <h3>No available rooms</h3>
+                            <p>
+                                Try selecting different dates or check again later.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="available-rooms-grid">
+                            {rooms.map(room => (
+                                <article
+                                    className="available-room-card"
+                                    key={room._id}
+                                >
+                                    <div className="available-room-icon">
+                                        <Hotel size={35} />
+                                    </div>
+
+                                    <div className="available-room-info">
+                                        <span className="available-label">
+                                            AVAILABLE
+                                        </span>
+
+                                        <h3>{room.roomType} Room</h3>
+
+                                        <p>Room Number: {room.roomNumber}</p>
+
+                                        <p>
+                                            {room.description ||
+                                                "Comfortable room with essential facilities."}
+                                        </p>
+                                    </div>
+
+                                    <div className="available-room-details">
+                                        <span>
+                                            <Users size={16} />
+                                            {room.capacity} Guests
+                                        </span>
+
+                                        <strong>
+                                            <IndianRupee size={17} />
+                                            {room.pricePerNight}
+                                            <small>/ night</small>
+                                        </strong>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        className="book-room-button"
+                                        onClick={() => handleBookRoom(room)}
+                                        disabled={bookingRoomId !== null}
+                                    >
+                                        {bookingRoomId === room._id
+                                            ? "Booking..."
+                                            : "Book Now"}
+                                    </button>
+                                </article>
+                            ))}
+                        </div>
+                    )}
                 </section>
 
                 {/* MY BOOKINGS */}
@@ -760,6 +1076,7 @@ const CustomerDashboard = () => {
 
                                         <div>
                                             <p>{notification.message}</p>
+
                                             <small>
                                                 {notification.isRead ? "Read" : "Unread"}
                                             </small>
@@ -767,14 +1084,13 @@ const CustomerDashboard = () => {
                                             {!notification.isRead && (
                                                 <button
                                                     className="mark-read-button"
-                                                    onClick={() => handleMarkAsRead(notification._id)}
+                                                    onClick={() =>
+                                                        handleMarkAsRead(notification._id)
+                                                    }
                                                 >
                                                     Mark as Read
                                                 </button>
                                             )}
-
-
-
                                         </div>
                                     </div>
                                 </article>

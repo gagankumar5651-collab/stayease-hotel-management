@@ -1,8 +1,15 @@
+
 import api from "./api";
 
-// Get all rooms
-export const getAllRooms = async () => {
-    const response = await api.get("/rooms");
+// Get available rooms according to selected dates
+export const getAllRooms = async (checkIn, checkOut) => {
+    const response = await api.get("/rooms", {
+        params: {
+            checkIn,
+            checkOut
+        }
+    });
+
     return response.data;
 };
 

@@ -43,7 +43,6 @@ const isValidRoomNumber = (value) => {
 // ======================================
 
 router.post("/add", authMiddleware, adminOnly, async (req, res) => {
-    console.log("ADD ROOM DATA:", req.body);
     try {
         const {
             roomNumber,
@@ -141,16 +140,60 @@ router.post("/add", authMiddleware, adminOnly, async (req, res) => {
 });
 
 // ======================================
-// 2. GET ALL ROOMS
-// GET /api/rooms
+// 2. GET AVAILABLE ROOMS
+// GET /api/rooms?checkIn=...&checkOut=...
 // ======================================
 
 router.get("/", async (req, res) => {
     try {
-        const rooms = await Room.find().sort({ createdAt: -1 });
+        const { checkIn, checkOut } = req.query;
+
+        // Both dates must be provided together
+        if ((checkIn && !checkOut) || (!checkIn && checkOut)) {
+            return res.status(400).json({
+                message: "Please provide both check-in and check-out dates."
+            });
+        }
+
+        // By default, show rooms whose status is available
+        const query = {
+            status: "available"
+        };
+
+        // Filter rooms according to selected dates
+        if (checkIn && checkOut) {
+            const startDate = new Date(checkIn);
+            const endDate = new Date(checkOut);
+
+            if (
+                Number.isNaN(startDate.getTime()) ||
+                Number.isNaN(endDate.getTime()) ||
+                endDate <= startDate
+            ) {
+                return res.status(400).json({
+                    message: "Invalid check-in or check-out dates."
+                });
+            }
+
+            // Find rooms having overlapping confirmed bookings
+            const bookedRooms = await Booking.distinct("room", {
+                status: "confirmed",
+                checkIn: { $lt: endDate },
+                checkOut: { $gt: startDate }
+            });
+
+            // Exclude those rooms
+            query._id = {
+                $nin: bookedRooms
+            };
+        }
+
+        const rooms = await Room.find(query).sort({
+            createdAt: -1
+        });
 
         return res.status(200).json({
-            message: "Rooms fetched successfully!",
+            message: "Available rooms fetched successfully!",
             totalRooms: rooms.length,
             rooms
         });
@@ -159,7 +202,7 @@ router.get("/", async (req, res) => {
         console.error("Get Rooms Error:", error.message);
 
         return res.status(500).json({
-            message: "Error fetching rooms"
+            message: "Error fetching available rooms"
         });
     }
 });
@@ -193,7 +236,7 @@ router.get("/:id", async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Get Room Error:", error.message);
+        console.error("Get Single Room Error:", error.message);
 
         return res.status(500).json({
             message: "Error fetching room"
