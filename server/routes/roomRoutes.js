@@ -4,7 +4,7 @@ const router = express.Router();
 
 const mongoose = require("mongoose");
 const Room = require("../models/Room");
-const Booking = require("../models/Booking");
+const Booking = require("../models/booking");
 const authMiddleware = require("../middleware/authMiddleware");
 
 console.log("ROOM ROUTES LOADED");
