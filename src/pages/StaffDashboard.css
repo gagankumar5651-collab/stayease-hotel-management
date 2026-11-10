@@ -1,0 +1,394 @@
+
+.staff-dashboard {
+    min-height: 100vh;
+    background: #f4f6fb;
+    color: #1e293b;
+}
+
+.staff-header {
+    background: #fff;
+    padding: 22px 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.staff-header h1 {
+    margin: 0;
+    font-size: 26px;
+    color: #172554;
+}
+
+.staff-header p {
+    margin: 5px 0 0;
+    color: #64748b;
+}
+
+.staff-header-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.staff-header-actions button,
+.staff-request-actions button,
+.staff-cancel-btn {
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+}
+
+.staff-header-actions button {
+    background: #e8edff;
+    color: #3730a3;
+}
+
+.staff-header-actions button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.staff-spinning {
+    animation: staff-spin 1s linear infinite;
+}
+
+@keyframes staff-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.staff-content {
+    max-width: 1250px;
+    margin: auto;
+    padding: 30px 20px;
+}
+
+.staff-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.staff-stat-card {
+    background: white;
+    padding: 22px;
+    border-radius: 14px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
+}
+
+.staff-stat-card svg {
+    color: #4f46e5;
+}
+
+.staff-stat-card p {
+    color: #64748b;
+    margin: 12px 0 5px;
+}
+
+.staff-stat-card h2 {
+    margin: 0;
+    font-size: 28px;
+}
+
+.staff-section {
+    background: white;
+    padding: 24px;
+    border-radius: 14px;
+    margin-bottom: 25px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
+}
+
+.staff-section h2 {
+    margin-top: 0;
+    color: #172554;
+}
+
+.staff-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.staff-section-header span {
+    background: #e0e7ff;
+    color: #3730a3;
+    padding: 7px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.staff-request-filter {
+    margin: 15px 0;
+}
+
+.staff-request-filter select,
+.staff-booking-filters select {
+    padding: 11px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: white;
+    color: #334155;
+    outline: none;
+    cursor: pointer;
+}
+
+.staff-request-list {
+    display: grid;
+    gap: 15px;
+}
+
+.staff-request-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.staff-request-info h3 {
+    margin: 0 0 10px;
+    color: #1e293b;
+}
+
+.staff-request-info p {
+    margin: 5px 0;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.staff-request-status,
+.staff-booking-status {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: capitalize;
+}
+
+.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.accepted,
+.confirmed {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.rejected,
+.cancelled {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.completed {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.staff-request-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.staff-accept-btn {
+    background: #16a34a;
+    color: white;
+}
+
+.staff-reject-btn {
+    background: #dc2626;
+    color: white;
+}
+
+.staff-complete-btn {
+    background: #2563eb;
+    color: white;
+}
+
+.staff-request-actions button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* BOOKING SEARCH AND FILTERS */
+
+.staff-booking-filters {
+    display: flex;
+    gap: 12px;
+    margin: 18px 0;
+    flex-wrap: wrap;
+}
+
+.staff-search-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 220px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0 12px;
+    background: white;
+}
+
+.staff-search-box svg {
+    color: #64748b;
+    flex-shrink: 0;
+}
+
+.staff-search-box input {
+    width: 100%;
+    border: none;
+    outline: none;
+    padding: 12px 0;
+    font-size: 14px;
+    background: transparent;
+}
+
+.staff-search-box button {
+    border: none;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.staff-booking-filters select {
+    min-width: 160px;
+}
+
+/* BOOKING TABLE */
+
+.staff-booking-table-wrapper {
+    overflow-x: auto;
+}
+
+.staff-booking-table-wrapper table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 850px;
+}
+
+.staff-booking-table-wrapper th,
+.staff-booking-table-wrapper td {
+    padding: 14px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.staff-booking-table-wrapper th {
+    background: #f8fafc;
+    color: #475569;
+    font-size: 13px;
+}
+
+.staff-booking-table-wrapper td {
+    font-size: 14px;
+}
+
+.staff-booking-table-wrapper td small {
+    display: block;
+    margin-top: 5px;
+    color: #64748b;
+}
+
+.staff-cancel-btn {
+    background: #fee2e2;
+    color: #b91c1c;
+    padding: 8px 12px;
+}
+
+.staff-cancel-btn:hover {
+    background: #fecaca;
+}
+
+.staff-cancel-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.staff-no-action {
+    color: #94a3b8;
+}
+
+.staff-empty {
+    color: #64748b;
+    text-align: center;
+    padding: 25px;
+}
+
+.staff-loading,
+.staff-error {
+    padding: 50px;
+    text-align: center;
+}
+
+.staff-error button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background: #4f46e5;
+    color: white;
+    cursor: pointer;
+}
+
+@media (max-width: 900px) {
+    .staff-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .staff-header {
+        align-items: flex-start;
+        gap: 15px;
+        flex-direction: column;
+    }
+
+    .staff-header-actions {
+        width: 100%;
+    }
+
+    .staff-content {
+        padding: 20px 12px;
+    }
+
+    .staff-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .staff-request-card {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .staff-section {
+        padding: 16px;
+    }
+
+    .staff-booking-filters {
+        flex-direction: column;
+    }
+
+    .staff-booking-filters select {
+        width: 100%;
+    }
+}

@@ -1,0 +1,220 @@
+
+.staff-management-page {
+    padding: 35px;
+    min-height: 100vh;
+    background: #f5f7fb;
+    color: #1e293b;
+}
+
+.staff-page-heading {
+    margin-bottom: 30px;
+}
+
+.staff-page-heading h1 {
+    font-size: 30px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.staff-page-heading p {
+    color: #64748b;
+    font-size: 15px;
+}
+
+.staff-form {
+    background: #ffffff;
+    padding: 28px;
+    border-radius: 14px;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
+    margin-bottom: 35px;
+}
+
+.staff-form h2,
+.staff-list-section h2 {
+    font-size: 21px;
+    margin-bottom: 22px;
+    font-weight: 650;
+}
+
+.staff-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.staff-form-grid input {
+    width: 100%;
+    padding: 13px 15px;
+    border: 1px solid #dce2eb;
+    border-radius: 8px;
+    outline: none;
+    font-size: 14px;
+    background: #fff;
+    color: #1e293b;
+    transition: 0.2s;
+}
+
+.staff-form-grid input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.staff-form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 22px;
+}
+
+.staff-form-actions button,
+.staff-card-actions button {
+    border: none;
+    border-radius: 8px;
+    padding: 11px 20px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.2s;
+}
+
+.staff-form-actions button {
+    background: #2563eb;
+    color: white;
+}
+
+.staff-form-actions button:hover {
+    background: #1d4ed8;
+}
+
+.staff-form-actions button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.staff-form-actions .staff-cancel-btn {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.staff-cancel-btn:hover {
+    background: #cbd5e1;
+}
+
+.staff-success {
+    color: #15803d;
+    margin-top: 16px;
+    font-weight: 600;
+}
+
+.staff-error {
+    color: #dc2626;
+    margin-top: 16px;
+    font-weight: 600;
+}
+
+.staff-list-section {
+    margin-top: 30px;
+}
+
+.staff-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 22px;
+}
+
+.staff-card {
+    background: white;
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
+    border: 1px solid #edf0f5;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.staff-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+.staff-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #dbeafe;
+    color: #1d4ed8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 23px;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+
+.staff-card h3 {
+    font-size: 19px;
+    margin-bottom: 14px;
+}
+
+.staff-card p {
+    color: #64748b;
+    font-size: 14px;
+    margin-bottom: 10px;
+    overflow-wrap: anywhere;
+}
+
+.staff-card p strong {
+    color: #334155;
+}
+
+.staff-role {
+    display: inline-block;
+    background: #dcfce7;
+    color: #15803d;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-top: 5px;
+    text-transform: capitalize;
+}
+
+.staff-card-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.staff-card-actions button {
+    flex: 1;
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.staff-card-actions button:hover {
+    background: #dbeafe;
+}
+
+.staff-card-actions .staff-delete-btn {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.staff-card-actions .staff-delete-btn:hover {
+    background: #fecaca;
+}
+
+@media (max-width: 650px) {
+    .staff-management-page {
+        padding: 18px;
+    }
+
+    .staff-form {
+        padding: 20px;
+    }
+
+    .staff-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .staff-page-heading h1 {
+        font-size: 25px;
+    }
+}
