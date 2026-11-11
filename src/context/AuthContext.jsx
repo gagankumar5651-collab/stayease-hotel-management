@@ -1,4 +1,5 @@
 import { createContext, useContext, useState } from "react";
+
 import {
     loginUser,
     registerUser,
@@ -8,6 +9,7 @@ import {
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+
     const [user, setUser] = useState(() => {
         const savedUser = sessionStorage.getItem("user");
         return savedUser ? JSON.parse(savedUser) : null;
@@ -28,13 +30,31 @@ export const AuthProvider = ({ children }) => {
         return await registerUser(userData);
     };
 
+    // Update user information
+    const updateUser = (updatedData) => {
+        setUser((previousUser) => {
+            if (!previousUser) return null;
+
+            const updatedUser = {
+                ...previousUser,
+                ...updatedData
+            };
+
+            sessionStorage.setItem(
+                "user",
+                JSON.stringify(updatedUser)
+            );
+
+            return updatedUser;
+        });
+    };
+
     const logout = () => {
         logoutUser();
 
         sessionStorage.removeItem("user");
         sessionStorage.removeItem("token");
 
-        // Clear old saved login data
         localStorage.removeItem("user");
         localStorage.removeItem("token");
 
@@ -42,7 +62,15 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout }}>
+        <AuthContext.Provider
+            value={{
+                user,
+                login,
+                register,
+                logout,
+                updateUser
+            }}
+        >
             {children}
         </AuthContext.Provider>
     );

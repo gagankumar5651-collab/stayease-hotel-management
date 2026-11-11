@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { uploadProfileImage } from "../services/authService";
 
 import {
     createBooking,
@@ -44,7 +45,7 @@ import {
 import "./CustomerDashboard.css";
 
 const CustomerDashboard = () => {
-    const { user, logout } = useAuth();
+    const { user, logout, updateUser } = useAuth();
     const navigate = useNavigate();
 
     const [bookings, setBookings] = useState([]);
@@ -53,6 +54,44 @@ const CustomerDashboard = () => {
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [uploadingPhoto, setUploadingPhoto] = useState(false);
+    const [profilePhotoError, setProfilePhotoError] = useState("");
+
+    const handleProfileImageUpload = async (e) => {
+        const file = e.target.files?.[0];
+
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+            setProfilePhotoError("Please select a valid image.");
+            e.target.value = "";
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            setProfilePhotoError("Image size must be less than 5 MB.");
+            e.target.value = "";
+            return;
+        }
+
+        try {
+            setUploadingPhoto(true);
+            setProfilePhotoError("");
+
+            const response = await uploadProfileImage(file);
+
+            updateUser(response.user);
+
+        } catch (err) {
+            setProfilePhotoError(
+                err.response?.data?.message ||
+                "Unable to upload profile photo."
+            );
+        } finally {
+            setUploadingPhoto(false);
+            e.target.value = "";
+        }
+    };
 
     const [search, setSearch] = useState("");
     const [bookingFilter, setBookingFilter] = useState("all");
@@ -146,45 +185,45 @@ const CustomerDashboard = () => {
     };
 
     // Fetch available rooms
-   const fetchAvailableRooms = async () => {
-    try {
-        setRoomLoading(true);
+    const fetchAvailableRooms = async () => {
+        try {
+            setRoomLoading(true);
 
-        // If both dates are empty, show all available rooms
-        if (!bookingDates.checkIn && !bookingDates.checkOut) {
-            const data = await getAllRooms();
+            // If both dates are empty, show all available rooms
+            if (!bookingDates.checkIn && !bookingDates.checkOut) {
+                const data = await getAllRooms();
+                setRooms(data.rooms || []);
+                return;
+            }
+
+            // If only one date is selected, wait for the other date
+            if (!bookingDates.checkIn || !bookingDates.checkOut) {
+                setRooms([]);
+                return;
+            }
+
+            // Fetch rooms according to selected dates
+            const data = await getAllRooms(
+                bookingDates.checkIn,
+                bookingDates.checkOut
+            );
+
             setRooms(data.rooms || []);
-            return;
-        }
 
-        // If only one date is selected, wait for the other date
-        if (!bookingDates.checkIn || !bookingDates.checkOut) {
+        } catch (err) {
             setRooms([]);
-            return;
+
+            setBookingMessage(
+                err.response?.data?.message ||
+                "Unable to load available rooms."
+            );
+
+            setBookingMessageType("error");
+
+        } finally {
+            setRoomLoading(false);
         }
-
-        // Fetch rooms according to selected dates
-        const data = await getAllRooms(
-            bookingDates.checkIn,
-            bookingDates.checkOut
-        );
-
-        setRooms(data.rooms || []);
-
-    } catch (err) {
-        setRooms([]);
-
-        setBookingMessage(
-            err.response?.data?.message ||
-            "Unable to load available rooms."
-        );
-
-        setBookingMessageType("error");
-
-    } finally {
-        setRoomLoading(false);
-    }
-};
+    };
     // Initial dashboard loading
     useEffect(() => {
         fetchDashboardData();
@@ -502,6 +541,47 @@ const CustomerDashboard = () => {
                 </div>
 
                 <div className="header-actions">
+                    <div className="customer-profile">
+                        <label
+                            htmlFor="profile-image-input"
+                            className="profile-image-label"
+                            title="Change profile photo"
+                        >
+                            {user?.profileImage ? (
+                                <img
+                                    src={user.profileImage}
+                                    alt="Profile"
+                                    className="customer-profile-image"
+                                />
+                            ) : (
+                                <div className="customer-profile-placeholder">
+                                    {user?.name?.charAt(0)?.toUpperCase() || "G"}
+                                </div>
+                            )}
+                        </label>
+
+                        <input
+                            id="profile-image-input"
+                            type="file"
+                            accept="image/*"
+                            hidden
+                            onChange={handleProfileImageUpload}
+                            disabled={uploadingPhoto}
+                        />
+
+                        <label
+                            htmlFor="profile-image-input"
+                            className="profile-upload-info"
+                        >
+                            <span>
+                                {uploadingPhoto ? "Uploading..." : "Change Photo"}
+                            </span>
+
+                            {profilePhotoError && (
+                                <small>{profilePhotoError}</small>
+                            )}
+                        </label>
+                    </div>
                     <span className="customer-name">
                         Hello, {user?.name || "Guest"}
                     </span>
@@ -668,8 +748,8 @@ const CustomerDashboard = () => {
                     )}
 
                     <div className="available-rooms-heading">
-    <h3>Available Rooms</h3>
-</div>
+                        <h3>Available Rooms</h3>
+                    </div>
 
                     {roomLoading ? (
                         <div className="customer-empty">

@@ -1,4 +1,3 @@
-
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
@@ -25,6 +24,16 @@ const userSchema = new mongoose.Schema(
         },
 
         phone: {
+            type: String,
+            default: ""
+        },
+
+        profileImage: {
+            type: String,
+            default: ""
+        },
+
+        profileImagePublicId: {
             type: String,
             default: ""
         },

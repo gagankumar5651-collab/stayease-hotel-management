@@ -1,4 +1,3 @@
-
 const express = require("express");
 const router = express.Router();
 
@@ -6,16 +5,32 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-// ======================================
-// REGISTER API
-// POST /api/auth/register
-// ======================================
+const authMiddleware = require("../middleware/authMiddleware");
+const cloudinary = require("../config/cloudinary");
+const multer = require("multer");
 
+// Multer memory storage
+const storage = multer.memoryStorage();
+
+const upload = multer({
+    storage,
+    limits: {
+        fileSize: 5 * 1024 * 1024
+    },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith("image/")) {
+            cb(null, true);
+        } else {
+            cb(new Error("Only image files are allowed"));
+        }
+    }
+});
+
+// REGISTER API
 router.post("/register", async (req, res) => {
     try {
         const { name, email, password, phone } = req.body;
 
-        // Required field validation
         if (
             typeof name !== "string" ||
             typeof email !== "string" ||
@@ -32,7 +47,6 @@ router.post("/register", async (req, res) => {
         const normalizedName = name.trim();
         const normalizedEmail = email.trim().toLowerCase();
 
-        // Email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
         if (!emailRegex.test(normalizedEmail)) {
@@ -41,14 +55,12 @@ router.post("/register", async (req, res) => {
             });
         }
 
-        // Password validation
         if (password.length < 6) {
             return res.status(400).json({
                 message: "Password must be at least 6 characters"
             });
         }
 
-        // Duplicate email check
         const existingUser = await User.findOne({
             email: normalizedEmail
         });
@@ -59,8 +71,6 @@ router.post("/register", async (req, res) => {
             });
         }
 
-        // Create customer account
-        // Role is intentionally not accepted from request body.
         const newUser = new User({
             name: normalizedName,
             email: normalizedEmail,
@@ -76,14 +86,14 @@ router.post("/register", async (req, res) => {
                 id: newUser._id,
                 name: newUser.name,
                 email: newUser.email,
-                role: newUser.role
+                role: newUser.role,
+                profileImage: newUser.profileImage
             }
         });
 
     } catch (error) {
         console.error("Registration Error:", error.message);
 
-        // Handle duplicate email race condition
         if (error.code === 11000) {
             return res.status(409).json({
                 message: "Email already registered"
@@ -96,11 +106,7 @@ router.post("/register", async (req, res) => {
     }
 });
 
-// ======================================
 // LOGIN API
-// POST /api/auth/login
-// ======================================
-
 router.post("/login", async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -116,10 +122,7 @@ router.post("/login", async (req, res) => {
             });
         }
 
-        // Check JWT secret
         if (!process.env.JWT_SECRET) {
-            console.error("JWT_SECRET is missing in .env file");
-
             return res.status(500).json({
                 message: "Authentication configuration error"
             });
@@ -137,7 +140,6 @@ router.post("/login", async (req, res) => {
             });
         }
 
-        // Compare password with stored hash
         const isPasswordCorrect = await bcrypt.compare(
             password,
             user.password
@@ -149,7 +151,6 @@ router.post("/login", async (req, res) => {
             });
         }
 
-        // Generate JWT token
         const token = jwt.sign(
             {
                 userId: user._id.toString(),
@@ -168,7 +169,8 @@ router.post("/login", async (req, res) => {
                 id: user._id,
                 name: user.name,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                profileImage: user.profileImage
             }
         });
 
@@ -180,5 +182,86 @@ router.post("/login", async (req, res) => {
         });
     }
 });
+
+// UPLOAD PROFILE PHOTO
+// POST /api/auth/profile-image
+
+router.post(
+    "/profile-image",
+    authMiddleware,
+    upload.single("profileImage"),
+    async (req, res) => {
+        try {
+            if (!req.file) {
+                return res.status(400).json({
+                    message: "Please select an image"
+                });
+            }
+
+            const user = await User.findById(req.user.userId);
+
+            if (!user) {
+                return res.status(404).json({
+                    message: "User not found"
+                });
+            }
+
+            const uploadResult = await new Promise((resolve, reject) => {
+                const stream = cloudinary.uploader.upload_stream(
+                    {
+                        folder: "stayease/profile-images",
+                        resource_type: "image"
+                    },
+                    (error, result) => {
+                        if (error) {
+                            reject(error);
+                        } else {
+                            resolve(result);
+                        }
+                    }
+                );
+
+                stream.end(req.file.buffer);
+            });
+
+            // Delete previous photo after new upload succeeds
+            const oldPublicId = user.profileImagePublicId;
+
+            user.profileImage = uploadResult.secure_url;
+            user.profileImagePublicId = uploadResult.public_id;
+
+            await user.save();
+
+            if (oldPublicId) {
+                try {
+                    await cloudinary.uploader.destroy(oldPublicId);
+                } catch (deleteError) {
+                    console.error(
+                        "Old profile image deletion failed:",
+                        deleteError.message
+                    );
+                }
+            }
+
+            return res.status(200).json({
+                message: "Profile photo updated successfully",
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
+                    profileImage: user.profileImage
+                }
+            });
+
+        } catch (error) {
+            console.error("Profile Image Error:", error.message);
+
+            return res.status(500).json({
+                message: "Failed to upload profile photo"
+            });
+        }
+    }
+);
 
 module.exports = router;
